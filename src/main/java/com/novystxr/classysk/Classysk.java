@@ -1,23 +1,16 @@
 package com.novystxr.classysk;
 
 import ch.njol.skript.Skript;
-import ch.njol.skript.registrations.Classes;
 import ch.njol.skript.variables.Variables;
-import com.novystxr.classysk.api.classes.TypedClassAdvice;
 import com.novystxr.classysk.api.fields.SerializableField;
 import com.novystxr.classysk.api.util.Logger;
 import com.novystxr.classysk.main.MainModule;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.agent.ByteBuddyAgent;
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
-import net.bytebuddy.matcher.ElementMatchers;
-import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skriptlang.skript.addon.SkriptAddon;
 import org.skriptlang.skript.registration.SyntaxInfo;
 import org.skriptlang.skript.util.Priority;
 
+@SuppressWarnings("UnstableApiUsage")
 public class Classysk extends JavaPlugin {
 
     public static final String NAME_PATTERN = "[\\w_]+";
@@ -28,16 +21,17 @@ public class Classysk extends JavaPlugin {
     public static boolean TYPES_ALLOWED = false;
 
     @Override
+    @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
         try {
-            ByteBuddyAgent.install();
+            /*ByteBuddyAgent.install();
             new ByteBuddy()
                 .redefine(Classes.class)
                 .visit(Advice.to(TypedClassAdvice.class).on(ElementMatchers.named("getClassInfoFromUserInput")))
                 .make()
                 .load(Classes.class.getClassLoader(), ClassReloadingStrategy.fromInstalledAgent());
-
-            TYPES_ALLOWED = true;
+            TYPES_ALLOWED = true;*/
+            throw new IllegalStateException("Class specific types currently do not work on minestom due to classloading limitations");
         } catch (IllegalStateException e) {
             Logger.log("<RED>The ByteBuddy agent failed to install, dynamic agent loading has likely been disabled for this JVM.",
             "The plugin will operate as normal but class-specific types will not be available.",
@@ -50,8 +44,5 @@ public class Classysk extends JavaPlugin {
 
         addon.localizer().setSourceDirectories("lang", null);
         addon.loadModules(new MainModule());
-
-        int pluginId = 31871;
-        new Metrics(this, pluginId);
     }
 }
