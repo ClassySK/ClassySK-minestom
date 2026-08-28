@@ -31,7 +31,7 @@ public class Classysk extends JavaPlugin {
                 .make()
                 .load(Classes.class.getClassLoader(), ClassReloadingStrategy.fromInstalledAgent());
             TYPES_ALLOWED = true;*/
-            throw new IllegalStateException("Class specific types currently do not work on minestom due to classloading limitations");
+            throw new IllegalStateException("Class specific types currently do not work on minestom due to classloading issues");
         } catch (IllegalStateException e) {
             Logger.log("<RED>The ByteBuddy agent failed to install, dynamic agent loading has likely been disabled for this JVM.",
             "The plugin will operate as normal but class-specific types will not be available.",
