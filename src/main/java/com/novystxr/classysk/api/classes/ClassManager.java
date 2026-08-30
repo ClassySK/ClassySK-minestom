@@ -139,13 +139,17 @@ public class ClassManager {
             Class<? extends TypedInstanceWrapper> subclass = getSubclass(name);
             ReflectUtils.allowRegistration();
 
+            boolean rechain = false;
             if (!Converters.exactConverterExists(ClassInstance.class, subclass)) {
                 ReflectUtils.removeFromQuickAccess(ClassInstance.class, subclass);
                 ReflectUtils.registerConverter(ClassInstance.class, subclass, getConditionalConverter(subclass));
+                rechain = true;
             }
             if (!Converters.exactConverterExists(subclass, ClassInstance.class)) {
                 Converters.registerConverter(subclass, ClassInstance.class, from -> from.instance);
+                rechain = true;
             }
+            if (rechain) Converters.createChainedConverters();
             ReflectUtils.disableRegistration();
         }
         classMap.put(name, skriptClass);

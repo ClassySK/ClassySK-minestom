@@ -6,20 +6,17 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://repo.skriptlang.org/releases")
+    maven("https://maven.hapily.me/snapshots")
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    compileOnly("com.github.SkriptLang:Skript:2.16.0")
-    implementation("net.bytebuddy:byte-buddy:1.18.11")
-    implementation("net.bytebuddy:byte-buddy-agent:1.18.11")
-    implementation("org.bstats:bstats-bukkit:3.2.1")
+    compileOnly("com.github.hapily04:skript-minestom:1.0.0-alpha.40")
+    implementation("net.bytebuddy:byte-buddy:1.18.12")
+    implementation("net.bytebuddy:byte-buddy-agent:1.18.12")
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
 tasks {
@@ -27,7 +24,6 @@ tasks {
         archiveClassifier.set("")
         configurations = project.configurations.runtimeClasspath.map { setOf(it) }
 
-        relocate("org.bstats", project.group.toString())
         relocate("net.bytebuddy", "com.novystxr.bytebuddy")
         relocate("net.bytebuddy.agent", "com.novystxr.bytebuddy.agent")
     }
