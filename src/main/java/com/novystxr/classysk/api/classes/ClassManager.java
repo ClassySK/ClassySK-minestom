@@ -146,6 +146,7 @@ public class ClassManager {
             if (!Converters.exactConverterExists(subclass, ClassInstance.class)) {
                 Converters.registerConverter(subclass, ClassInstance.class, from -> from.instance);
             }
+            Converters.createChainedConverters();
             ReflectUtils.disableRegistration();
         }
         classMap.put(name, skriptClass);
