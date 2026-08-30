@@ -43,10 +43,12 @@ public class Classysk extends JavaPlugin {
     @Override
     @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
+        // skript-minestom's class loading differs from bukkit in that we can't reference anything classysk related from the advice itself
+        // so we need to use a bridge that handles the internal stuff and inject it into the bootstrap classloader to ensure skript-minestom knows about it
         try {
-            Instrumentation inst = ByteBuddyAgent.install();
+            Instrumentation agent = ByteBuddyAgent.install();
             ClassInjector.UsingInstrumentation
-                .of(new File("."), Target.BOOTSTRAP, inst)
+                .of(new File("."), Target.BOOTSTRAP, agent)
                 .inject(Collections.singletonMap(
                     new TypeDescription.ForLoadedType(AdviceBridge.class),
                     ClassFileLocator.ForClassLoader.read(AdviceBridge.class)
@@ -54,13 +56,22 @@ public class Classysk extends JavaPlugin {
 
             Class<?> bridge = Class.forName("com.novystxr.classysk.api.classes.AdviceBridge", true, null);
             bridge.getDeclaredField("pattern").set(null, Pattern.compile("("+CLASSNAME_PATTERN+") instances?"));
-            bridge.getDeclaredField("processClassInfoResult").set(null, (Function<String, Object>) Classysk::processClassInfoResult);
+            bridge.getDeclaredField("processClassInfoResult").set(null, (Function<String, Object>) matched -> {
+                matched = StringUtils.getLowerCase(matched);
+                Class<? extends TypedInstanceWrapper> subclass = ClassManager.getSubclass(matched);
+
+                return new ClassInfo<>(subclass, "typedinstance")
+                    .name("Typed Instance Wrapper")
+                    .serializeAs(ClassInstance.class)
+                    .parser(new TypedInstanceParser<>());
+            });
 
             new ByteBuddy()
                 .redefine(Classes.class)
                 .visit(Advice.to(TypedClassAdvice.class).on(ElementMatchers.named("getClassInfoFromUserInput")))
                 .make()
                 .load(Classes.class.getClassLoader(), ClassReloadingStrategy.fromInstalledAgent());
+
             TYPES_ALLOWED = true;
         } catch (IllegalStateException e) {
             Logger.log("<RED>The ByteBuddy agent failed to install, dynamic agent loading has likely been disabled for this JVM.",
@@ -77,15 +88,5 @@ public class Classysk extends JavaPlugin {
 
         addon.localizer().setSourceDirectories("lang", null);
         addon.loadModules(new MainModule());
-    }
-
-    public static Object processClassInfoResult(String matchedPattern) {
-        matchedPattern = StringUtils.getLowerCase(matchedPattern);
-        Class<? extends TypedInstanceWrapper> subclass = ClassManager.getSubclass(matchedPattern);
-
-        return new ClassInfo<>(subclass, "typedinstance")
-            .name("Typed Instance Wrapper")
-            .serializeAs(ClassInstance.class)
-            .parser(new TypedInstanceParser<>());
     }
 }
