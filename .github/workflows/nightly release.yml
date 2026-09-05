@@ -1,19 +1,32 @@
-name: nightly release
-
+name: Deploy Nightly
 on:
+  # This can be used to allow manually triggering nightlies from the web interface
   workflow_dispatch:
 
 jobs:
-  create_release:
-    runs-on: ubuntu-latest
+  nightly:
+    name: Deploy nightly
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Create nightly release
-        id: create_release
-        uses: viperproject/create-nightly-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@4
+
+      - name: set release version
+        run: echo "RELEASE_VERSION=nightly-$(date +'%Y%m%d')-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: build
+        run: ./gradlew build -Pversion=${{ env.RELEASE_VERSION }}
+
+      - name: create release
+        uses: WebFreak001/deploy-nightly@v3.2.0
         with:
-          tag_name: ${{ env.TAG_NAME }}
-          release_name: Nightly Release ${{ env.TAG_NAME }}
-          keep_num: 0
-          keep_tags: false
+          upload_url: https://uploads.github.com/repos/ClassySK/ClassySK-minestom/releases/383316480/assets{?name,label} # find out this value by opening https://api.github.com/repos/<owner>/<repo>/releases in your browser and copy the full "upload_url" value including the {?name,label} part
+          release_id: 383316480 # same as above (id can just be taken out the upload_url, it's used to find old releases)
+          asset_path: ./build/libs/ClassySK-${{ env.RELEASE_VERSION }}.jar # path to archive to upload
+          asset_name: ClassySK-${{ env.RELEASE_VERSION }}.jar # name to upload the release as, use $$ to insert date (YYYYMMDD) and 6 letter commit hash
+          asset_content_type: application/java-archive # required by GitHub API
+          max_releases: 1 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
+          ignore_hash: true # optional, if there is already a release associated with the repo's current commit, should we go ahead and upload the asset anyway.
