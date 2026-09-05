@@ -12,7 +12,7 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@4
+      - uses: actions/checkout@v4
 
       - name: set release version
         run: echo "RELEASE_VERSION=nightly-$(date +'%Y%m%d')-${GITHUB_SHA::7}" >> $GITHUB_ENV
