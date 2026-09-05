@@ -17,6 +17,9 @@ jobs:
       - name: set release version
         run: echo "RELEASE_VERSION=nightly-$(date +'%Y%m%d')-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
+      - name: allow gradlew to be executed
+        run: chmod +x ./gradlew
+
       - name: build
         run: ./gradlew build -Pversion=${{ env.RELEASE_VERSION }}
 
