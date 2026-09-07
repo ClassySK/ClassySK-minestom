@@ -26,7 +26,7 @@ public class SkriptField {
          */
         public static FieldSignature fromSerializableField(String fieldName, SerializableField sField) {
 
-            return new FieldSignature(fieldName, sField.signatureType, null,
+            return new FieldSignature(fieldName, Object.class, null,
                 Modifier.PUBLIC.array(), sField.isPlural);
         }
         public boolean canConvert(@NotNull Object[] values) {
