@@ -100,17 +100,11 @@ public class ExprFieldAccess extends SimpleExpression<Object> {
         FieldHolder holder = getValidHolder(event);
         if (holder == null) return null;
 
-        FieldSignature signature = validator.product();
-
-        if (shouldBeSingle.isTrue() && signature.isPlural()) {
-            error("Field returns multiple values while reporting as single. Try reloading the script or using a safe call: %instance%<>::field");
-            return null;
+        Object[] value = validator.getSafeConverted(holder.getFieldValue(fieldName), shouldBeSingle.isTrue());
+        if (value == null) {
+            error("The result of this field call couldn't convert to its reported type.");
         }
-        if (!bestReturnType.isAssignableFrom(signature.type())) {
-            error("Field doesn't match its reported type. Try reloading the script or using a safe call: %instance%<>::field");
-            return null;
-        }
-        return holder.getFieldValue(fieldName);
+        return value;
     }
 
     @Override

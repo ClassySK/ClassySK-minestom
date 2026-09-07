@@ -12,12 +12,11 @@ import com.novystxr.classysk.api.util.SimpleErrorHandler;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.lang.converter.Converters;
 import org.skriptlang.skript.log.runtime.ErrorSource;
 import org.skriptlang.skript.log.runtime.RuntimeErrorProducer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public abstract class AccessValidator<T extends AccessModifiable> implements RuntimeErrorProducer {
     private ClassInstance instance;
@@ -49,22 +48,44 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
     protected abstract @Nullable T getProductFromInstance(ClassInstance instance);
 
     /**
+     *
+     * Assures that the resulting array can be safely returned from a syntax, given the product type and reported plurality.
+     * Attempts to convert to the product type if some values within did not match the target type.
+     *
+     * @param value The array to return
+     * @param isSingle If this syntax reports to be single or plural
+     * @return null if the conversion/validation failed, otherwise the safe converted array
+     */
+    public Object @Nullable [] getSafeConverted(Object @NotNull [] value, boolean isSingle) {
+        Class<?> convertTo = product().type();
+
+        if (!Arrays.stream(value).allMatch(convertTo::isInstance)) {
+            value = Converters.convert(value, product().type());
+
+            if (value.length == 0) { // failed to convert any values, error
+                return null;
+            }
+        }
+
+        if (isSingle && value.length > 1) {
+            return null;
+        }
+        return value;
+    }
+
+    /**
      * A helper method to get all possible return types based off of previous guesses from {@link AccessValidator#validateUnknown(SkriptClass)}
      * @return The {@link AccessValidator#product} return type, OR all return types of {@link AccessValidator#guesses}
      */
     public final Class<?>[] possibleTypes() {
-        if (product != null) return new Class<?>[]{product.type()};
+        if (product != null) return new Class<?>[]{product().type()};
         if (guesses.isEmpty()) return new Class<?>[]{Object.class};
 
-        Class<?>[] possibleTypes = new Class[guesses.size()];
-
-        int i = 0;
+        Set<Class<?>> possibleTypes = new HashSet<>();
         for (T guess : guesses) {
-            Class<?> type = guess.type();
-            if (type != null) possibleTypes[i++] = guess.type();
+            possibleTypes.add(guess.type());
         }
-        if (i == 0) return new Class<?>[]{Object.class};
-        return i == possibleTypes.length ? possibleTypes : Arrays.copyOf(possibleTypes, i);
+        return possibleTypes.toArray(Class[]::new);
     }
 
 

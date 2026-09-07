@@ -90,7 +90,7 @@ public class Types {
 
                     for (SkriptField skriptField : o.fieldMap.values()) {
                         FieldSignature signature = skriptField.signature;
-                        SerializableField sField = new SerializableField(skriptField.value, signature.type(), signature.isPlural());
+                        SerializableField sField = new SerializableField(skriptField.value, signature.isPlural());
 
                         if (!sField.canBeSaved()) continue;
 

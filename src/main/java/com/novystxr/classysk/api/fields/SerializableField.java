@@ -14,12 +14,10 @@ import java.io.StreamCorruptedException;
 public class SerializableField implements YggdrasilExtendedSerializable {
 
     public Object[] value;
-    public Class<?> signatureType;
     public boolean isPlural;
 
-    public SerializableField(Object[] value, Class<?> signatureType, boolean isPlural) {
+    public SerializableField(Object[] value, boolean isPlural) {
         this.value = value;
-        this.signatureType = signatureType;
         this.isPlural = isPlural;
     }
 
@@ -30,7 +28,6 @@ public class SerializableField implements YggdrasilExtendedSerializable {
         Fields fields = new Fields();
 
         fields.putObject("value", value);
-        fields.putObject("signatureType", signatureType);
         fields.putPrimitive("isPlural", isPlural);
 
         return fields;
@@ -39,30 +36,34 @@ public class SerializableField implements YggdrasilExtendedSerializable {
     @Override
     public void deserialize(@NotNull Fields fields) throws StreamCorruptedException {
         value = fields.getObject("value", Object[].class);
-        signatureType = fields.getObject("signatureType", Class.class);
         isPlural = fields.getPrimitive("isPlural", boolean.class);
     }
 
     public boolean canBeSaved() {
-        for (Object val : value) {
-            ClassInfo<?> classInfo = Classes.getSuperClassInfo(val.getClass());
+        Object[] newValue = new Object[value.length];
+        for (int i = 0; i < value.length; i++) {
+            if (value[i] == null) {
+                continue;
+            }
+            ClassInfo<?> classInfo = Classes.getSuperClassInfo(value[i].getClass());
             Class<?> serializeAs = classInfo.getSerializeAs();
             if (serializeAs != null) {
                 classInfo = Classes.getExactClassInfo(serializeAs);
                 if (classInfo == null) return false;
-                value = Converters.convert(value, serializeAs);
-                signatureType = serializeAs;
+                newValue[i] = Converters.convert(value[i], serializeAs);
+            } else {
+                newValue[i] = value[i];
             }
             if (classInfo.getSerializer() == null) {
                 return false;
             }
         }
-
+        value = newValue;
         return true;
     }
 
     public FieldSignature mergeSignature(FieldSignature signature) {
         Modifier[] modifiers = Modifier.without(signature.modifiers(), Modifier.STATIC);
-        return new FieldSignature(signature.name(), signatureType, null, modifiers, isPlural);
+        return new FieldSignature(signature.name(), Object.class, null, modifiers, isPlural);
     }
 }
