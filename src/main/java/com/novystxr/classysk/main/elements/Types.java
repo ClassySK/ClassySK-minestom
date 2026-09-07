@@ -1,5 +1,6 @@
 package com.novystxr.classysk.main.elements;
 
+import ch.njol.skript.SkriptAPIException;
 import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.classes.Parser;
 import ch.njol.skript.classes.Serializer;
@@ -17,12 +18,8 @@ import com.novystxr.classysk.api.util.TypedInstanceParser;
 import org.skriptlang.skript.addon.SkriptAddon;
 import org.skriptlang.skript.lang.comparator.Comparators;
 import org.skriptlang.skript.lang.comparator.Relation;
-import org.skriptlang.skript.lang.properties.Property;
-import org.skriptlang.skript.lang.properties.handlers.base.ExpressionPropertyHandler;
-
 import java.io.StreamCorruptedException;
 
-@SuppressWarnings("UnstableApiUsage")
 public class Types {
     public static void register(SkriptAddon addon) {
 
@@ -30,8 +27,6 @@ public class Types {
             .since("1.0.0")
             .user("class reference(s)?")
             .name("Class Reference")
-            .property(Property.NAME, "The name of the class", addon,
-                ExpressionPropertyHandler.of(ClassReference::name, String.class))
             .description("Non-instance reference of a class, represents the class as a whole")
             .parser(new Parser<>() {
 
@@ -69,8 +64,6 @@ public class Types {
             .since("1.0.0")
             .user("class instances?")
             .name("Class Instance")
-            .property(Property.NAME, "The name of the class this instance belongs to", addon,
-                ExpressionPropertyHandler.of(instance -> instance.name, String.class))
             .description("Instance version of a class, holds non-static methods and fields, representing a created instance of a class.")
             .parser(new Parser<>() {
 
@@ -104,6 +97,11 @@ public class Types {
                         fields.putObject("field:"+signature.name(), sField);
                     }
                     return fields;
+                }
+
+                @Override
+                public void deserialize(ClassInstance instance, Fields fields) {
+                    throw new SkriptAPIException("Deserialize shouldn't be called with an instance");
                 }
 
                 @Override
