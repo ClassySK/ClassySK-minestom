@@ -37,7 +37,6 @@ public class EffMethodCall extends Effect {
     private MethodValidator validator;
     private boolean isStatic;
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean init(Expression<?>[] exprs, int pattern, Kleenean isDelayed, ParseResult result) {
         isStatic = pattern == 1;
@@ -60,7 +59,7 @@ public class EffMethodCall extends Effect {
             }
             return validator.validateStatic(skriptClass);
         }
-        return validator.validateExpression((Expression<ClassInstance>) exprs[0]);
+        return validator.validateExpression(exprs[0]);
     }
 
     @Override

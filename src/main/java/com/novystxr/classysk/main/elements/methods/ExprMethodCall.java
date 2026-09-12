@@ -41,7 +41,6 @@ public class ExprMethodCall extends SimpleExpression<Object> {
     private Class<?>[] possibleTypes;
     private Class<?> bestReturnType;
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean init(Expression<?>[] exprs, int pattern, Kleenean isDelayed, ParseResult result) {
         isStatic = pattern == 1;
@@ -64,7 +63,7 @@ public class ExprMethodCall extends SimpleExpression<Object> {
             }
             return validator.validateStatic(skriptClass) && postInit();
         }
-        return validator.validateExpression((Expression<ClassInstance>) exprs[0]) && postInit();
+        return validator.validateExpression(exprs[0]) && postInit();
     }
 
     private boolean postInit() {
