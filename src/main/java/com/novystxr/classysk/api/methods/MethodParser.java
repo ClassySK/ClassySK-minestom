@@ -29,12 +29,13 @@ public class MethodParser {
 
     // argument components
     private static final String NAME = "(?<name>[_a-zA-Z0-9]+)";
-    private static final String TYPE = "(?<optional>optional)?(?<type>[a-zA-Z ]+)";
+    private static final String TYPE = "(?<type>[a-zA-Z ]+)";
     private static final String VALUE = "(?<value>.+)";
+    private static final String OPTIONAL = "(?<optional>\\?)?";
 
     // compiled argument patterns
     private static final Pattern DEF_ARG_PATTERN =
-        Pattern.compile("^\\s*"+NAME+"\\s*:\\s*"+TYPE+"(?:\\s*=\\s*"+VALUE+"+)?$");
+        Pattern.compile("^\\s*"+NAME+"\\s*"+OPTIONAL+"\\s*:\\s*"+TYPE+"(?:\\s*=\\s*"+VALUE+"+)?$");
 
     private static final Pattern REF_ARG_PATTERN =
         Pattern.compile("(?:\\s*"+NAME+":\\s)?"+VALUE);
@@ -129,8 +130,6 @@ public class MethodParser {
                     Skript.error("Invalid argument name: %s", variableName);
                     return null;
                 }
-                if (optional)
-                    Skript.warning("'optional' is unnecessary here because default arguments are already optional.");
             } else if (optional) {
                 defaultValue = new DefaultValue.Empty<>(type);
             }
