@@ -5,11 +5,11 @@ import ch.njol.skript.lang.Expression;
 import ch.njol.skript.log.LogEntry;
 import ch.njol.skript.util.Utils;
 import ch.njol.util.Kleenean;
+import com.novystxr.classysk.api.classes.ClassContextHolder;
 import com.novystxr.classysk.api.classes.ClassInstance;
 import com.novystxr.classysk.api.classes.ClassManager;
 import com.novystxr.classysk.api.classes.SkriptClass;
 import com.novystxr.classysk.api.util.SimpleErrorHandler;
-import com.novystxr.classysk.main.elements.classes.ExprSelf;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,20 +77,22 @@ public abstract class Validator<T extends AccessModifiable> implements RuntimeEr
 
     /**
      *
-     * Gets the inferred class (if possible) from the target expression. Tries to get it from the expressions return type if it is a subclass of {@link ClassInstance}. This may be used to yield more accurate results if type hints are enabled.
-     *
-     * @param expr The expression to check
-     * @return The relevant {@link SkriptClass} or null.
+     * Gets the inferred classes (if possible) from the target expression.
      */
-    public static @Nullable SkriptClass getExpressionClass(Expression<ClassInstance> expr) {
-        if (expr.getSource() instanceof ExprSelf self) {
-            return self.skriptClass;
+    public static Collection<SkriptClass> getPossibleClasses(Expression<?> expr) {
+        if (expr instanceof ClassContextHolder holder) {
+            return List.of(holder.getContextClass());
         }
-        Class<?> returnType = expr.getReturnType();
-        if (returnType != ClassInstance.class && returnType.isAssignableFrom(ClassInstance.class)) {
-            return ClassManager.getClass(returnType.getSimpleName());
+        Class<?>[] possibleTypes = expr.possibleReturnTypes();
+        List<SkriptClass> possibleClasses = new ArrayList<>();
+        for (Class<?> type : possibleTypes) {
+            if (type == ClassInstance.class || type == Object.class) {
+                return ClassManager.getClasses();
+            } else if (ClassInstance.class.isAssignableFrom(type)) {
+                possibleClasses.add(ClassManager.getClass(type.getSimpleName()));
+            }
         }
-        return null;
+        return possibleClasses;
     }
 
     /**
@@ -112,7 +114,7 @@ public abstract class Validator<T extends AccessModifiable> implements RuntimeEr
     /**
      * Tries to find the best possible return type for that pattern to report
      *
-     * @param possibleTypes Must contain atleast one class, see {@link Validator#possibleTypes()}
+     * @param possibleTypes Must contain at least one class, see {@link Validator#possibleTypes()}
      *
      * @return The highest denominator of possible return types
      */
@@ -156,48 +158,21 @@ public abstract class Validator<T extends AccessModifiable> implements RuntimeEr
      */
     public final @Nullable ClassInstance getValidInstance(Event event) {
         ClassInstance newInstance = instanceExpr.getSingle(event);
-
-        if (newInstance == null) {
-            error("Target instance was not set");
-            return null;
-        }
-        SkriptClass parent = newInstance.getParent();
-        if (parent == null) {
-            error("Target instance has no parent class");
-            return null;
-        }
-        if (this.instance == newInstance)
-            return newInstance;
-
-        LogEntry error;
-        try (var handler = new SimpleErrorHandler()) {
-            if (validateInstance(newInstance)) {
-                return newInstance;
-            }
-            error = handler.getLastError();
-        }
-        if (error != null) {
-            error(error.getMessage());
-        }
-        return null;
+        return validateInstance(newInstance) ? newInstance : null;
     }
 
     /**
      * Used for validating instances via expression at parse time
      */
-    public final boolean validateExpression(Expression<ClassInstance> expr) {
-        this.instanceExpr = expr;
-        SkriptClass inferredClass = getExpressionClass(expr);
-
-        Collection<SkriptClass> check = inferredClass == null ? ClassManager.getClasses() : List.of(inferredClass);
+    public final boolean validateExpression(Expression<?> expr) {
+        //noinspection unchecked
+        this.instanceExpr = (Expression<ClassInstance>) expr;
         LogEntry error;
         try (var handler = new SimpleErrorHandler().start()) {
-            for (SkriptClass skriptClass : check) {
-
+            for (SkriptClass skriptClass : getPossibleClasses(expr)) {
                 T product = getProductFromClass(skriptClass);
                 if (product == null || !validate(product, contextClass))
                     continue;
-
                 guesses.add(product);
             }
             error = handler.getLastError();
@@ -233,7 +208,19 @@ public abstract class Validator<T extends AccessModifiable> implements RuntimeEr
      * @return true if the instance was valid, false if it was not
      *
      */
-    public final boolean validateInstance(@NotNull ClassInstance newInstance) {
+    public final boolean validateInstance(@Nullable ClassInstance newInstance) {
+        if (newInstance == null) {
+            error("Target instance was not set");
+            return false;
+        }
+        SkriptClass parent = newInstance.getParent();
+        if (parent == null) {
+            error("Target instance has no parent class");
+            return false;
+        }
+        if (this.instance == newInstance)
+            return true;
+
         LogEntry error;
         try (var handler = new SimpleErrorHandler().start()) {
             this.product = getProductFromInstance(newInstance);

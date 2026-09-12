@@ -7,6 +7,7 @@ import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
+import com.novystxr.classysk.api.classes.ClassContextHolder;
 import com.novystxr.classysk.api.classes.ClassInstance;
 import com.novystxr.classysk.api.classes.SkriptClass;
 import com.novystxr.classysk.api.methods.MethodEvent;
@@ -30,7 +31,7 @@ import org.skriptlang.skript.registration.SyntaxRegistry;
     \t\tadd 1 to self::counter
     """)
 @Since("1.0.0")
-public class ExprSelf extends SimpleExpression<Object> implements EventRestrictedSyntax {
+public class ExprSelf extends SimpleExpression<Object> implements EventRestrictedSyntax, ClassContextHolder {
     public static void register(SyntaxRegistry registry) {
         registry.register(
             SyntaxRegistry.EXPRESSION,
@@ -41,7 +42,7 @@ public class ExprSelf extends SimpleExpression<Object> implements EventRestricte
         );
     }
 
-    public SkriptClass skriptClass;
+    private SkriptClass skriptClass;
 
     @Override
     public boolean init(Expression<?>[] expressions, int matchedPattern, Kleenean isDelayed, SkriptParser.ParseResult parseResult) {
@@ -56,6 +57,11 @@ public class ExprSelf extends SimpleExpression<Object> implements EventRestricte
                 ? null : CollectionUtils.array(methodEvent.instance);
         }
         return null;
+    }
+
+    @Override
+    public SkriptClass getContextClass() {
+        return skriptClass;
     }
 
     @Override

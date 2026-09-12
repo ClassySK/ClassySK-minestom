@@ -10,6 +10,7 @@ import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
 import com.novystxr.classysk.Classysk;
+import com.novystxr.classysk.api.classes.ClassContextHolder;
 import com.novystxr.classysk.api.Modifier;
 import com.novystxr.classysk.api.classes.SkriptClass;
 import com.novystxr.classysk.api.classes.ClassManager;
@@ -41,7 +42,7 @@ import java.util.regex.Pattern;
     \tbalance: 5000
     """)
 @Since("1.0.0")
-public class SecExprNewInstance extends SectionExpression<Object> {
+public class SecExprNewInstance extends SectionExpression<Object> implements ClassContextHolder {
 
     private static final Pattern VALID_NODE_PATTERN = Pattern.compile("("+ Classysk.NAME_PATTERN +"): (.+)");
 
@@ -119,6 +120,11 @@ public class SecExprNewInstance extends SectionExpression<Object> {
             newInstance.setFieldValue(fieldName, value);
         }
         return CollectionUtils.array(newInstance);
+    }
+
+    @Override
+    public SkriptClass getContextClass() {
+        return skriptClass;
     }
 
     @Override
