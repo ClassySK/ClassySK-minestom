@@ -2,8 +2,11 @@ package com.novystxr.classysk.api;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.lang.Expression;
+import ch.njol.skript.lang.Variable;
+import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.log.LogEntry;
 import ch.njol.skript.util.Utils;
+import ch.njol.skript.variables.HintManager;
 import ch.njol.util.Kleenean;
 import com.novystxr.classysk.api.classes.ClassContextHolder;
 import com.novystxr.classysk.api.classes.ClassInstance;
@@ -79,12 +82,20 @@ public abstract class Validator<T extends AccessModifiable> implements RuntimeEr
      *
      * Gets the inferred classes (if possible) from the target expression.
      */
+    @SuppressWarnings("UnstableApiUsage")
     public static Collection<SkriptClass> getPossibleClasses(Expression<?> expr) {
         if (expr instanceof ClassContextHolder holder) {
             return List.of(holder.getContextClass());
         }
-        Class<?>[] possibleTypes = expr.possibleReturnTypes();
         List<SkriptClass> possibleClasses = new ArrayList<>();
+        Class<?>[] possibleTypes;
+
+        HintManager hintManager = ParserInstance.get().getHintManager();
+        if (hintManager.isActive() && expr instanceof Variable<?> variable && HintManager.canUseHints(variable)) {
+            possibleTypes = hintManager.get(variable).toArray(Class[]::new);
+        } else {
+            possibleTypes = expr.possibleReturnTypes();
+        }
         for (Class<?> type : possibleTypes) {
             if (type == ClassInstance.class || type == Object.class) {
                 return ClassManager.getClasses();
