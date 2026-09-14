@@ -79,8 +79,8 @@ public abstract class Validator<T extends AccessModifiable> implements RuntimeEr
     }
 
     /**
-     *
      * Gets the inferred classes (if possible) from the target expression.
+     * If any specific classes could not be inferred, this returns a collection of every class.
      */
     @SuppressWarnings("UnstableApiUsage")
     public static Collection<SkriptClass> getPossibleClasses(Expression<?> expr) {
