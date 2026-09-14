@@ -66,7 +66,10 @@ public class Types {
 
         Classes.registerClass(new ClassInfo<>(ClassInstance.class, "classinstance")
             .since("1.0.0")
-            .user("class instances?")
+            .user("instances?")
+            .usage("[%-class%] instance[s]")
+            .examples("function getPlayerManager() :: PlayerManager instance:")
+            .examples("function getAnyClassInstance() :: instance:")
             .name("Class Instance")
             .property(Property.NAME, "The name of the class this instance belongs to", addon,
                 ExpressionPropertyHandler.of(instance -> instance.name, String.class))
