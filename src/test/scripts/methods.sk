@@ -490,7 +490,7 @@ class TestReturns:
 		return self::returnBools()
 
 	
-	public returnSelf() :: class instance:
+	public returnSelf() :: instance:
 		return self
 
 test "ClassySK - Method Returns":
@@ -618,19 +618,19 @@ test "ClassySK - Keyed method input":
 
 class TestChain:
 
-	public chain_instance: class instance
+	public chain_instance: instance
 
-	public chain1() :: class instance:
+	public chain1() :: instance:
 		return self
-	public chain2() :: class instance:
+	public chain2() :: instance:
 		return self
-	public chain3() :: class instance:
+	public chain3() :: instance:
 		return self
-	public chain4() :: class instance:
+	public chain4() :: instance:
 		return self
-	public chain5() :: class instance:
+	public chain5() :: instance:
 		return self
-	public chain6() :: class instance:
+	public chain6() :: instance:
 		return self
 
 test "ClassySK - Method Chaining":
