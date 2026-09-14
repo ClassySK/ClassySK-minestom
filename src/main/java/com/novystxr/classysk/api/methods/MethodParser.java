@@ -57,24 +57,20 @@ public class MethodParser {
 
     public static @Nullable MethodReference parseReference(String name, @Nullable String args, boolean isStatic) {
         List<ReferenceArgument> referenceArguments = new ArrayList<>();
-
         if (args == null) {
             return new MethodReference(name, new ArrayList<>(), isStatic);
         }
-
         List<String> rawArgs = splitArgs(args);
         if (rawArgs == null) {
-            Skript.error("Could not separate arguments; Invalid parenthesis");
+            Skript.error("Invalid text/variables/parentheses in the arguments of this method call.");
             return null;
         }
-
         for (String arg : rawArgs) {
             Matcher matcher = REF_ARG_PATTERN.matcher(arg);
             if (!matcher.matches()) {
                 Skript.error("Invalid argument pattern: "+ arg);
                 return null;
             }
-
             String unparsedExpr = matcher.group("value");
             String argName = matcher.group("name");
 
@@ -87,7 +83,6 @@ public class MethodParser {
             }
             referenceArguments.add(new ReferenceArgument(argName, expr));
         }
-
         return new MethodReference(name, referenceArguments, isStatic);
     }
 
