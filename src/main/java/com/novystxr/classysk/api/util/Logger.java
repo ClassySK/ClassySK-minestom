@@ -1,21 +1,16 @@
 package com.novystxr.classysk.api.util;
 
-import com.novystxr.classysk.Classysk;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.LoggerUtils;
+
+import java.util.logging.Level;
 
 public class Logger {
 
-    private static final ConsoleCommandSender console;
-    private static final java.util.logging.Logger logger;
-
-    private static final MiniMessage mm;
+    private static final org.slf4j.Logger logger = Bukkit.getBetterLogger();
     private static final String prefix = "<GRAY>[<#83A4FF>ClassySK<GRAY>] <WHITE>";
 
-    private static Component buildMessage(Object... objects) {
+    private static String buildMessage(Object... objects) {
         StringBuilder builder = new StringBuilder();
 
         builder.append(prefix);
@@ -25,11 +20,11 @@ public class Logger {
             builder.append(" ");
         }
 
-        return mm.deserialize(builder.toString());
+        return builder.toString();
     }
 
     public static void log(Object... values) {
-        console.sendMessage((buildMessage(values)));
+        LoggerUtils.log(logger, Level.INFO, buildMessage(values));
     }
 
     public static void info(String msg) {
@@ -37,20 +32,10 @@ public class Logger {
     }
 
     public static void severe(String msg) {
-        logger.severe(msg);
+        logger.error(msg);
     }
 
     public static void warning(String msg) {
-        logger.warning(msg);
-    }
-
-
-    static {
-        JavaPlugin plugin = Classysk.getPlugin(Classysk.class);
-
-        console = Bukkit.getServer().getConsoleSender();
-        logger = plugin.getLogger();
-
-        mm = MiniMessage.miniMessage();
+        logger.warn(msg);
     }
 }

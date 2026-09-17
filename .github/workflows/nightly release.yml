@@ -1,0 +1,38 @@
+name: Deploy Nightly
+on:
+  # This can be used to allow manually triggering nightlies from the web interface
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  nightly:
+    name: Deploy nightly
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set release version
+        run: echo "RELEASE_VERSION=nightly-$(date +'%Y%m%d')-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: allow gradlew to be executed
+        run: chmod +x ./gradlew
+
+      - name: build
+        run: ./gradlew build -Pversion=${{ env.RELEASE_VERSION }}
+
+      - name: create release
+        uses: WebFreak001/deploy-nightly@v3.2.0
+        with:
+          upload_url: https://uploads.github.com/repos/ClassySK/ClassySK-minestom/releases/383316480/assets{?name,label}
+          release_id: 383316480
+          asset_path: ./build/libs/ClassySK-${{ env.RELEASE_VERSION }}.jar
+          asset_name: ClassySK-${{ env.RELEASE_VERSION }}.jar
+          asset_content_type: application/java-archive
+          max_releases: 1
+          ignore_hash: true
