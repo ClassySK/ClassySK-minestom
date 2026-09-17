@@ -52,7 +52,7 @@ public class Classysk extends JavaPlugin {
                 matched = StringUtils.getLowerCase(matched);
                 Class<? extends ClassInstance> subclass = ClassManager.getSubclass(matched);
 
-                return new ClassInfo<>(subclass, "classinstance")
+                return new ClassInfo<>(subclass, matched+"classinstance")
                     .name("Class Instance")
                     .serializeAs(ClassInstance.class);
             });
