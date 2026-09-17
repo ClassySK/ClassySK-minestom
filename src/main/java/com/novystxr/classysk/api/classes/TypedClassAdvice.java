@@ -20,15 +20,14 @@ public class TypedClassAdvice {
         Matcher matcher = pattern.matcher(input);
         if (matcher.matches()) {
             String name = StringUtils.getLowerCase(matcher.group(1));
-            result = getClassInfo(ClassManager.getSubclass(name));
+            result = getClassInfo(name, ClassManager.getSubclass(name));
 
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends ClassInstance> ClassInfo<T> getClassInfo(Class<T> subclass) {
-        return new ClassInfo<>(subclass, "classinstance")
-            .name("Class Instance")
+    public static <T extends ClassInstance> ClassInfo<T> getClassInfo(String name, Class<T> subclass) {
+        return new ClassInfo<>(subclass, name+"classinstance")
             .serializeAs(ClassInstance.class)
             .parser((Parser<T>) Types.classParser);
     }
