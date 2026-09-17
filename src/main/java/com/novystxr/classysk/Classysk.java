@@ -24,8 +24,8 @@ import org.skriptlang.skript.addon.SkriptAddon;
 import org.skriptlang.skript.registration.SyntaxInfo;
 import org.skriptlang.skript.util.Priority;
 
-import java.io.File;
 import java.lang.instrument.Instrumentation;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -47,12 +47,9 @@ public class Classysk extends JavaPlugin {
         // so we need to use a bridge that handles the internal stuff and inject it into the bootstrap classloader to ensure skript-minestom knows about it
         try {
             Instrumentation agent = ByteBuddyAgent.install();
-            ClassInjector.UsingInstrumentation
-                .of(new File("."), Target.BOOTSTRAP, agent)
+            ClassInjector.UsingInstrumentation.of(Files.createTempDirectory("tmp").toFile(), Target.BOOTSTRAP, agent)
                 .inject(Collections.singletonMap(
-                    new TypeDescription.ForLoadedType(AdviceBridge.class),
-                    ClassFileLocator.ForClassLoader.read(AdviceBridge.class)
-                ));
+                    new TypeDescription.ForLoadedType(AdviceBridge.class), ClassFileLocator.ForClassLoader.read(AdviceBridge.class)));
 
             Class<?> bridge = Class.forName("com.novystxr.classysk.api.classes.AdviceBridge", true, null);
             bridge.getDeclaredField("pattern").set(null, Pattern.compile("("+CLASSNAME_PATTERN+") instances?"));
