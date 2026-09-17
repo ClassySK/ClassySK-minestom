@@ -30,22 +30,22 @@ public class ReflectUtils {
 
     @SuppressWarnings("unchecked")
     public static <T extends ClassInstance> void registerClassInfo(String name, Class<T> clazz) {
-        name = StringUtils.getLowerCase(name);
-        String codename = name+"classinstance";
-
-        ClassInfo<?> info = new ClassInfo<>(clazz, name+"classinstance")
-            .serializeAs(ClassInstance.class)
-            .parser((Parser<? extends T>) Types.classParser);
-
         try {
             var exactClassInfosMap = (Map<Class<?>, ClassInfo<?>>) exactClassInfos.get(null);
             if (exactClassInfosMap.containsKey(clazz)) {
                 return;
             }
-            exactClassInfosMap.put(clazz, info);
+            name = StringUtils.getLowerCase(name);
+            String codename = name+"classinstance";
 
             var localizedLanguageMap = (Map<String, String>) localizedLanguage.get(null);
             localizedLanguageMap.put("types."+codename, StringUtils.titleCase(name) + " instance");
+
+            ClassInfo<?> info = new ClassInfo<>(clazz, codename)
+                .serializeAs(ClassInstance.class)
+                .parser((Parser<? extends T>) Types.classParser);
+
+            exactClassInfosMap.put(clazz, info);
 
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
