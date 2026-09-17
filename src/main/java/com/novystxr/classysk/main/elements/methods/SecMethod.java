@@ -1,6 +1,7 @@
 package com.novystxr.classysk.main.elements.methods;
 
 import ch.njol.skript.Skript;
+import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.doc.*;
 import ch.njol.skript.lang.*;
@@ -71,6 +72,7 @@ public class SecMethod extends Section implements ReturnHandler<Object> {
     public SkriptMethod result;
 
     public SkriptClass contextClass;
+    private Node node;
 
     @Override
     public boolean init(Expression<?>[] exprs, int pattern, Kleenean isDelayed, ParseResult result, SectionNode sectionNode, List<TriggerItem> triggerItems) {
@@ -95,11 +97,12 @@ public class SecMethod extends Section implements ReturnHandler<Object> {
 
         this.result = new SkriptMethod(methodName, args, Modifier.collect(result.tags), returnType, returnPlural);
         this.sectionNode = sectionNode;
+        node = getParser().getNode();
         return true;
     }
 
     public boolean parseDefaults() {
-        SkriptLogger.setNode(getNode());
+        SkriptLogger.setNode(node);
         for (MethodArgument arg : result.arguments.values()) {
             DefaultValue<?> defaultValue = arg.defaultValue();
             if (defaultValue != null && !defaultValue.parse()) {
