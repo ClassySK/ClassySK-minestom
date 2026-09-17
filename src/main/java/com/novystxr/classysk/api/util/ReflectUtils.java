@@ -13,12 +13,16 @@ import java.util.Map;
 
 public class ReflectUtils {
     private static final Field exactClassInfos;
+    private static final Field superClassInfos;
     private static final Field localizedLanguage;
 
     static {
         try {
             exactClassInfos = Classes.class.getDeclaredField("exactClassInfos");
             exactClassInfos.setAccessible(true);
+
+            superClassInfos = Classes.class.getDeclaredField("superClassInfos");
+            superClassInfos.setAccessible(true);
 
             localizedLanguage = Language.class.getDeclaredField("localizedLanguage");
             localizedLanguage.setAccessible(true);
@@ -45,7 +49,9 @@ public class ReflectUtils {
                 .serializeAs(ClassInstance.class)
                 .parser((Parser<? extends T>) Types.classParser);
 
+            var superClassInfoMap = (Map<Class<?>, ClassInfo<?>>) superClassInfos.get(null);
             exactClassInfosMap.put(clazz, info);
+            superClassInfoMap.put(clazz, info);
 
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
