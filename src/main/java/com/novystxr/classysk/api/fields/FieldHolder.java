@@ -61,8 +61,9 @@ public interface FieldHolder {
 
     default @NotNull Object[] getFieldValue(String fieldName) {
         Object[] value = fieldValueMap().get(fieldName);
-        return convertIfOldPlayer(fieldName,
-            value == null ? new Object[0] : Arrays.copyOf(value, value.length));
+        if (value == null) return new Object[0];
+
+        return convertIfOldPlayer(fieldName, Arrays.copyOf(value, value.length));
     }
 
     @SuppressWarnings("unchecked")
