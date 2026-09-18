@@ -13,16 +13,12 @@ import java.util.Map;
 
 public class ReflectUtils {
     private static final Field exactClassInfos;
-    private static final Field superClassInfos;
     private static final Field localizedLanguage;
 
     static {
         try {
             exactClassInfos = Classes.class.getDeclaredField("exactClassInfos");
             exactClassInfos.setAccessible(true);
-
-            superClassInfos = Classes.class.getDeclaredField("superClassInfos");
-            superClassInfos.setAccessible(true);
 
             localizedLanguage = Language.class.getDeclaredField("localizedLanguage");
             localizedLanguage.setAccessible(true);
@@ -47,24 +43,20 @@ public class ReflectUtils {
 
     @SuppressWarnings("unchecked")
     public static <T extends ClassInstance> void registerClassInfo(String name, Class<T> clazz) {
-        try {
-            var exactClassInfosMap = (Map<Class<?>, ClassInfo<?>>) exactClassInfos.get(null);
-            if (exactClassInfosMap.containsKey(clazz)) {
-                return;
-            }
+        if (Classes.getExactClassInfo(clazz) == null) {
             name = StringUtils.getLowerCase(name);
             createLanguageNode(name);
-
-            ClassInfo<?> info = new ClassInfo<>(clazz, name+"classinstance")
+            ClassInfo<?> info = new ClassInfo<>(clazz, name + "classinstance")
                 .serializeAs(ClassInstance.class)
                 .parser((Parser<? extends T>) Types.classParser);
+            try {
 
-            var superClassInfoMap = (Map<Class<?>, ClassInfo<?>>) superClassInfos.get(null);
-            exactClassInfosMap.put(clazz, info);
-            superClassInfoMap.put(clazz, info);
+                var exactClassInfosMap = (Map<Class<?>, ClassInfo<?>>) exactClassInfos.get(null);
+                exactClassInfosMap.put(clazz, info);
 
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
