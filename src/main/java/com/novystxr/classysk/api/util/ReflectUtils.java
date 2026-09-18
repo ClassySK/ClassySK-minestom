@@ -13,16 +13,12 @@ import java.util.Map;
 
 public class ReflectUtils {
     private static final Field exactClassInfos;
-    private static final Field superClassInfos;
     private static final Field localizedLanguage;
 
     static {
         try {
             exactClassInfos = Classes.class.getDeclaredField("exactClassInfos");
             exactClassInfos.setAccessible(true);
-
-            superClassInfos = Classes.class.getDeclaredField("superClassInfos");
-            superClassInfos.setAccessible(true);
 
             localizedLanguage = Language.class.getDeclaredField("localizedLanguage");
             localizedLanguage.setAccessible(true);
@@ -33,28 +29,34 @@ public class ReflectUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends ClassInstance> void registerClassInfo(String name, Class<T> clazz) {
+    public static void createLanguageNode(String name) {
+        String key = "types."+name+"classinstance";
+        if (Language.keyExists(key)) return;
+
         try {
-            var exactClassInfosMap = (Map<Class<?>, ClassInfo<?>>) exactClassInfos.get(null);
-            if (exactClassInfosMap.containsKey(clazz)) {
-                return;
-            }
-            name = StringUtils.getLowerCase(name);
-            String codename = name+"classinstance";
-
             var localizedLanguageMap = (Map<String, String>) localizedLanguage.get(null);
-            localizedLanguageMap.put("types."+codename, StringUtils.titleCase(name) + " instance");
-
-            ClassInfo<?> info = new ClassInfo<>(clazz, codename)
-                .serializeAs(ClassInstance.class)
-                .parser((Parser<? extends T>) Types.classParser);
-
-            var superClassInfoMap = (Map<Class<?>, ClassInfo<?>>) superClassInfos.get(null);
-            exactClassInfosMap.put(clazz, info);
-            superClassInfoMap.put(clazz, info);
-
+            localizedLanguageMap.put("types."+name+"classinstance", StringUtils.titleCase(name) + " instance");
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends ClassInstance> void registerClassInfo(String name, Class<T> clazz) {
+        if (Classes.getExactClassInfo(clazz) == null) {
+            name = StringUtils.getLowerCase(name);
+            createLanguageNode(name);
+            ClassInfo<?> info = new ClassInfo<>(clazz, name + "classinstance")
+                .serializeAs(ClassInstance.class)
+                .parser((Parser<? extends T>) Types.classParser);
+            try {
+
+                var exactClassInfosMap = (Map<Class<?>, ClassInfo<?>>) exactClassInfos.get(null);
+                exactClassInfosMap.put(clazz, info);
+
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

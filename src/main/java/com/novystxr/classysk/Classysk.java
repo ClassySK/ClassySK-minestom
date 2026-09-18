@@ -7,6 +7,7 @@ import ch.njol.skript.variables.Variables;
 import com.novystxr.classysk.api.classes.*;
 import com.novystxr.classysk.api.fields.SerializableField;
 import com.novystxr.classysk.api.util.Logger;
+import com.novystxr.classysk.api.util.ReflectUtils;
 import com.novystxr.classysk.api.util.StringUtils;
 import com.novystxr.classysk.main.MainModule;
 import com.novystxr.classysk.main.elements.Types;
@@ -50,10 +51,11 @@ public class Classysk extends JavaPlugin {
 
             bridge.getDeclaredField("pattern").set(null, Pattern.compile("(\\w+) instances?"));
             bridge.getDeclaredField("processClassInfoResult").set(null, (Function<String, Object>) matched -> {
-                matched = StringUtils.getLowerCase(matched);
-                Class<? extends ClassInstance> subclass = ClassManager.getSubclass(matched);
+                String name = StringUtils.getLowerCase(matched);
+                Class<? extends ClassInstance> subclass = ClassManager.getSubclass(name);
 
-                return new ClassInfo<>(subclass, matched+"classinstance")
+                ReflectUtils.createLanguageNode(name);
+                return new ClassInfo<>(subclass, name+"classinstance")
                     .serializeAs(ClassInstance.class)
                     .parser(Types.getParser());
             });
