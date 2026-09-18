@@ -12,11 +12,14 @@ import com.novystxr.classysk.api.classes.*;
 import com.novystxr.classysk.api.fields.SerializableField;
 import com.novystxr.classysk.api.util.StringUtils;
 import org.skriptlang.skript.addon.SkriptAddon;
-import org.skriptlang.skript.lang.comparator.Comparators;
-import org.skriptlang.skript.lang.comparator.Relation;
 import java.io.StreamCorruptedException;
 
 public class Types {
+    @SuppressWarnings("unchecked")
+    public static <T extends ClassInstance, E extends T> Parser<E> getParser() {
+        return (Parser<E>) classParser;
+    }
+
     public static Parser<? extends ClassInstance> classParser = new Parser<>() {
 
         @Override

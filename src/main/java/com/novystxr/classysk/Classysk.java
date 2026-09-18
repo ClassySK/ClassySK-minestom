@@ -9,6 +9,7 @@ import com.novystxr.classysk.api.fields.SerializableField;
 import com.novystxr.classysk.api.util.Logger;
 import com.novystxr.classysk.api.util.StringUtils;
 import com.novystxr.classysk.main.MainModule;
+import com.novystxr.classysk.main.elements.Types;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.asm.Advice;
@@ -53,8 +54,8 @@ public class Classysk extends JavaPlugin {
                 Class<? extends ClassInstance> subclass = ClassManager.getSubclass(matched);
 
                 return new ClassInfo<>(subclass, matched+"classinstance")
-                    .name("Class Instance")
-                    .serializeAs(ClassInstance.class);
+                    .serializeAs(ClassInstance.class)
+                    .parser(Types.getParser());
             });
 
             new ByteBuddy()
