@@ -49,7 +49,7 @@ public class Classysk extends JavaPlugin {
                     ClassFileLocator.ForClassLoader.read(AdviceBridge.class)));
             Class<?> bridge = Class.forName("com.novystxr.classysk.api.classes.AdviceBridge", true, null);
 
-            bridge.getDeclaredField("pattern").set(null, Pattern.compile("(\\w+) instances?"));
+            bridge.getDeclaredField("pattern").set(null, Pattern.compile("("+ CLASSNAME_PATTERN +") instances?"));
             bridge.getDeclaredField("processClassInfoResult").set(null, (Function<String, Object>) matched -> {
                 String name = StringUtils.getLowerCase(matched);
                 Class<? extends ClassInstance> subclass = ClassManager.getSubclass(name);
