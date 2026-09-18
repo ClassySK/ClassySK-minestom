@@ -33,6 +33,19 @@ public class ReflectUtils {
     }
 
     @SuppressWarnings("unchecked")
+    public static void createLanguageNode(String name) {
+        String key = "types."+name+"classinstance";
+        if (Language.keyExists(key)) return;
+
+        try {
+            var localizedLanguageMap = (Map<String, String>) localizedLanguage.get(null);
+            localizedLanguageMap.put("types."+name+"classinstance", StringUtils.titleCase(name) + " instance");
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T extends ClassInstance> void registerClassInfo(String name, Class<T> clazz) {
         try {
             var exactClassInfosMap = (Map<Class<?>, ClassInfo<?>>) exactClassInfos.get(null);
@@ -40,12 +53,9 @@ public class ReflectUtils {
                 return;
             }
             name = StringUtils.getLowerCase(name);
-            String codename = name+"classinstance";
+            createLanguageNode(name);
 
-            var localizedLanguageMap = (Map<String, String>) localizedLanguage.get(null);
-            localizedLanguageMap.put("types."+codename, StringUtils.titleCase(name) + " instance");
-
-            ClassInfo<?> info = new ClassInfo<>(clazz, codename)
+            ClassInfo<?> info = new ClassInfo<>(clazz, name+"classinstance")
                 .serializeAs(ClassInstance.class)
                 .parser((Parser<? extends T>) Types.classParser);
 

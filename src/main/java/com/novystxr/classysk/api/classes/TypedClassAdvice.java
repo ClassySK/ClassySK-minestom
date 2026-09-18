@@ -2,6 +2,7 @@ package com.novystxr.classysk.api.classes;
 
 import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.classes.Parser;
+import com.novystxr.classysk.api.util.ReflectUtils;
 import com.novystxr.classysk.api.util.StringUtils;
 import com.novystxr.classysk.main.elements.Types;
 import net.bytebuddy.asm.Advice;
@@ -27,6 +28,7 @@ public class TypedClassAdvice {
 
     @SuppressWarnings("unchecked")
     public static <T extends ClassInstance> ClassInfo<T> getClassInfo(String name, Class<T> subclass) {
+        ReflectUtils.createLanguageNode(name);
         return new ClassInfo<>(subclass, name+"classinstance")
             .serializeAs(ClassInstance.class)
             .parser((Parser<T>) Types.classParser);
