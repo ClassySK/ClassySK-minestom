@@ -7,9 +7,10 @@ import ch.njol.skript.variables.Variables;
 import com.novystxr.classysk.api.classes.*;
 import com.novystxr.classysk.api.fields.SerializableField;
 import com.novystxr.classysk.api.util.Logger;
+import com.novystxr.classysk.api.util.ReflectUtils;
 import com.novystxr.classysk.api.util.StringUtils;
-import com.novystxr.classysk.api.util.TypedInstanceParser;
 import com.novystxr.classysk.main.MainModule;
+import com.novystxr.classysk.main.elements.Types;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.asm.Advice;
@@ -24,7 +25,6 @@ import org.skriptlang.skript.addon.SkriptAddon;
 import org.skriptlang.skript.registration.SyntaxInfo;
 import org.skriptlang.skript.util.Priority;
 
-import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.function.Function;
@@ -43,24 +43,21 @@ public class Classysk extends JavaPlugin {
     @Override
     @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
-        // skript-minestom's class loading differs from bukkit in that we can't reference anything classysk related from the advice itself
-        // so we need to use a bridge that handles the internal stuff and inject it into the bootstrap classloader to ensure skript-minestom knows about it
         try {
-            Instrumentation agent = ByteBuddyAgent.install();
-            ClassInjector.UsingInstrumentation.of(Files.createTempDirectory("tmp").toFile(), Target.BOOTSTRAP, agent)
-                .inject(Collections.singletonMap(
-                    new TypeDescription.ForLoadedType(AdviceBridge.class), ClassFileLocator.ForClassLoader.read(AdviceBridge.class)));
-
+            ClassInjector.UsingInstrumentation.of(Files.createTempDirectory("tmp").toFile(), Target.BOOTSTRAP, ByteBuddyAgent.install())
+                .inject(Collections.singletonMap(new TypeDescription.ForLoadedType(AdviceBridge.class),
+                    ClassFileLocator.ForClassLoader.read(AdviceBridge.class)));
             Class<?> bridge = Class.forName("com.novystxr.classysk.api.classes.AdviceBridge", true, null);
-            bridge.getDeclaredField("pattern").set(null, Pattern.compile("("+CLASSNAME_PATTERN+") instances?"));
-            bridge.getDeclaredField("processClassInfoResult").set(null, (Function<String, Object>) matched -> {
-                matched = StringUtils.getLowerCase(matched);
-                Class<? extends TypedInstanceWrapper> subclass = ClassManager.getSubclass(matched);
 
-                return new ClassInfo<>(subclass, "typedinstance")
-                    .name("Typed Instance Wrapper")
+            bridge.getDeclaredField("pattern").set(null, Pattern.compile("("+ CLASSNAME_PATTERN +") instances?"));
+            bridge.getDeclaredField("processClassInfoResult").set(null, (Function<String, Object>) matched -> {
+                String name = StringUtils.getLowerCase(matched);
+                Class<? extends ClassInstance> subclass = ClassManager.getSubclass(name);
+
+                ReflectUtils.createLanguageNode(name);
+                return new ClassInfo<>(subclass, name+"classinstance")
                     .serializeAs(ClassInstance.class)
-                    .parser(new TypedInstanceParser<>());
+                    .parser(Types.getParser());
             });
 
             new ByteBuddy()

@@ -6,7 +6,6 @@ import net.bytebuddy.asm.Advice;
 import java.util.regex.Matcher;
 
 public class TypedClassAdvice {
-
     @Advice.OnMethodExit
     static void onExit(@Advice.Argument(0) String input, @Advice.Return(readOnly = false) ClassInfo<?> result) {
         if (result != null) return;

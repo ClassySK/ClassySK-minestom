@@ -2,9 +2,13 @@ package com.novystxr.classysk.api;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.lang.Expression;
+import ch.njol.skript.lang.Variable;
+import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.log.LogEntry;
 import ch.njol.skript.util.Utils;
+import ch.njol.skript.variables.HintManager;
 import ch.njol.util.Kleenean;
+import com.novystxr.classysk.api.classes.ClassContextHolder;
 import com.novystxr.classysk.api.classes.ClassInstance;
 import com.novystxr.classysk.api.classes.ClassManager;
 import com.novystxr.classysk.api.classes.SkriptClass;
@@ -18,14 +22,15 @@ import org.skriptlang.skript.log.runtime.RuntimeErrorProducer;
 
 import java.util.*;
 
-public abstract class AccessValidator<T extends AccessModifiable> implements RuntimeErrorProducer {
+public abstract class Validator<T extends AccessModifiable> implements RuntimeErrorProducer {
     private ClassInstance instance;
-    protected final SkriptClass contextClass;
+    private final SkriptClass contextClass;
 
     private T product = null;
     private final List<T> guesses = new ArrayList<>();
 
     private final ErrorSource errorSource;
+    private Expression<ClassInstance> instanceExpr;
 
     public final T product() {
         return product;
@@ -34,7 +39,7 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
     /**
      * Extend with extra data that is necessary
      */
-    public AccessValidator(ErrorSource errorSource, SkriptClass contextClass) {
+    public Validator(ErrorSource errorSource, SkriptClass contextClass) {
         this.errorSource = errorSource;
         this.contextClass = contextClass;
     }
@@ -42,7 +47,7 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
     /**
      * Validate your signature and set any extra data
      */
-    protected abstract boolean validate(T product, boolean isStatic, SkriptClass targetClass);
+    protected abstract boolean validate(T product, @Nullable SkriptClass contextClass);
 
     protected abstract @Nullable T getProductFromClass(SkriptClass skriptClass);
     protected abstract @Nullable T getProductFromInstance(ClassInstance instance);
@@ -74,8 +79,36 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
     }
 
     /**
-     * A helper method to get all possible return types based off of previous guesses from {@link AccessValidator#validateUnknown(SkriptClass)}
-     * @return The {@link AccessValidator#product} return type, OR all return types of {@link AccessValidator#guesses}
+     * Gets the inferred classes (if possible) from the target expression.
+     * If any specific classes could not be inferred, this returns a collection of every class.
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    public static Collection<SkriptClass> getPossibleClasses(Expression<?> expr) {
+        if (expr instanceof ClassContextHolder holder) {
+            return List.of(holder.getContextClass());
+        }
+        List<SkriptClass> possibleClasses = new ArrayList<>();
+        Class<?>[] possibleTypes;
+
+        HintManager hintManager = ParserInstance.get().getHintManager();
+        if (hintManager.isActive() && expr instanceof Variable<?> variable && HintManager.canUseHints(variable)) {
+            possibleTypes = hintManager.get(variable).toArray(Class[]::new);
+        } else {
+            possibleTypes = expr.possibleReturnTypes();
+        }
+        for (Class<?> type : possibleTypes) {
+            if (type == ClassInstance.class || type == Object.class) {
+                return ClassManager.getClasses();
+            } else if (ClassInstance.class.isAssignableFrom(type)) {
+                possibleClasses.add(ClassManager.getClass(type.getSimpleName()));
+            }
+        }
+        return possibleClasses;
+    }
+
+    /**
+     * A helper method to get all possible return types based off of previous guesses from {@link Validator#validateExpression(Expression)}
+     * @return The {@link Validator#product} return type, OR all return types of {@link Validator#guesses}
      */
     public final Class<?>[] possibleTypes() {
         if (product != null) return new Class<?>[]{product().type()};
@@ -92,7 +125,7 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
     /**
      * Tries to find the best possible return type for that pattern to report
      *
-     * @param possibleTypes Must contain atleast one class, see {@link AccessValidator#possibleTypes()}
+     * @param possibleTypes Must contain at least one class, see {@link Validator#possibleTypes()}
      *
      * @return The highest denominator of possible return types
      */
@@ -132,91 +165,39 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
      * Helper method for validating instances at runtime
      *
      * @param event The event to grab the instance with
-     * @param instanceExpr The expression to grab the instance from
-     * @param hintClass The hint class retrieved at init, null if unspecified
      * @return The instance which has been validated against the reference OR null if it wasn't valid
      */
-    public final @Nullable ClassInstance getValidInstance(Event event, Expression<ClassInstance> instanceExpr, @Nullable SkriptClass hintClass) {
+    public final @Nullable ClassInstance getValidInstance(Event event) {
         ClassInstance newInstance = instanceExpr.getSingle(event);
-
-        if (newInstance == null) {
-            error("Target instance was not set");
-            return null;
-        }
-        SkriptClass parent = newInstance.getParent();
-        if (parent == null) {
-            error("Target instance is not accessible");
-            return null;
-        }
-
-        if (this.instance == newInstance) return newInstance;
-
-        if (hintClass != null && hintClass != parent) {
-            error("Given instance does not match '"+ hintClass.getEffectiveName() +"'");
-            return null;
-        }
-
-        LogEntry error;
-        try (var handler = new SimpleErrorHandler()) {
-            if (validateInstance(newInstance, parent)) {
-                return newInstance;
-            }
-            error = handler.getLastError();
-        }
-        if (error != null) {
-            error(error.getMessage());
-        }
-        return null;
+        return validateInstance(newInstance) ? newInstance : null;
     }
 
     /**
-     * Used for validating instances at parse time
-     *
-     * @param hintClass Either the context class from 'self' or user defined. If null, the validator will attempt to check every class
-     * @return TRUE if could find the right class,
-     * FALSE if could find the right class but the reference is not valid,
-     * UNKNOWN if could not find the right class
+     * Used for validating instances via expression at parse time
      */
-    public final Kleenean validateUnknown(@Nullable SkriptClass hintClass) {
+    public final boolean validateExpression(Expression<?> expr) {
+        //noinspection unchecked
+        this.instanceExpr = (Expression<ClassInstance>) expr;
         LogEntry error;
-        SkriptClass resultClass = null;
-
         try (var handler = new SimpleErrorHandler().start()) {
-            if (hintClass != null) {
-                T product = getProductFromClass(hintClass);
-                if (product != null) {
-                    guesses.add(product);
-                    resultClass = hintClass;
-                }
-            } else {
-                for (SkriptClass skriptClass : ClassManager.getClasses()) {
-                    T product = getProductFromClass(skriptClass);
-                    if (product != null) {
-                        guesses.add(product);
-                        resultClass = skriptClass;
-                    }
-                }
+            for (SkriptClass skriptClass : getPossibleClasses(expr)) {
+                T product = getProductFromClass(skriptClass);
+                if (product == null || !validate(product, contextClass))
+                    continue;
+                guesses.add(product);
             }
             error = handler.getLastError();
         }
         if (guesses.isEmpty()) {
             if (error != null)
                 Skript.error(error.getMessage());
-            return Kleenean.FALSE;
+            return false;
         }
         if (guesses.size() != 1) {
-            return Kleenean.UNKNOWN;
+            return true; // unknown, exact resolution happens at runtime
         }
         this.product = guesses.getFirst();
-
-        try (var handler = new SimpleErrorHandler().start()) {
-            if (validate(product, false, resultClass)) {
-                return Kleenean.TRUE;
-            }
-            error = handler.getLastError();
-        }
-        if (error != null) Skript.error(error.getMessage());
-        return Kleenean.FALSE;
+        return true;
     }
 
     /**
@@ -228,7 +209,7 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
         this.product = getProductFromClass(skriptClass);
         if (product == null) return false;
 
-        return validate(product, true, skriptClass);
+        return validate(product, contextClass);
     }
 
     /**
@@ -238,13 +219,32 @@ public abstract class AccessValidator<T extends AccessModifiable> implements Run
      * @return true if the instance was valid, false if it was not
      *
      */
-    public final boolean validateInstance(@NotNull ClassInstance newInstance, SkriptClass parent) {
-        this.product = getProductFromInstance(newInstance);
-        if (product != null) {
-            if (validate(product, false, parent)) {
-                this.instance = newInstance;
-                return true;
+    public final boolean validateInstance(@Nullable ClassInstance newInstance) {
+        if (newInstance == null) {
+            error("Target instance was not set");
+            return false;
+        }
+        SkriptClass parent = newInstance.getParent();
+        if (parent == null) {
+            error("Target instance has no parent class");
+            return false;
+        }
+        if (this.instance == newInstance)
+            return true;
+
+        LogEntry error;
+        try (var handler = new SimpleErrorHandler().start()) {
+            this.product = getProductFromInstance(newInstance);
+            if (product != null) {
+                if (validate(product, contextClass)) {
+                    this.instance = newInstance;
+                    return true;
+                }
             }
+            error = handler.getLastError();
+        }
+        if (error != null) {
+            error(error.getMessage());
         }
         return false;
     }

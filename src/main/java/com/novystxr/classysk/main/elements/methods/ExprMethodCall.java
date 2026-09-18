@@ -6,16 +6,14 @@ import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
 import com.novystxr.classysk.Classysk;
-import com.novystxr.classysk.api.AccessValidator;
+import com.novystxr.classysk.api.Validator;
 import com.novystxr.classysk.api.classes.ClassInstance;
 import com.novystxr.classysk.api.classes.ClassManager;
 import com.novystxr.classysk.api.classes.SkriptClass;
 import com.novystxr.classysk.api.methods.MethodParser;
 import com.novystxr.classysk.api.methods.MethodParser.MethodReference;
 import com.novystxr.classysk.api.methods.MethodValidator;
-import com.novystxr.classysk.api.methods.MethodValidator.ValidReference;
 import com.novystxr.classysk.api.methods.SkriptMethod;
-import com.novystxr.classysk.main.elements.classes.ExprSelf;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 import org.skriptlang.skript.registration.DefaultSyntaxInfos;
@@ -39,61 +37,48 @@ public class ExprMethodCall extends SimpleExpression<Object> {
     private MethodValidator validator;
     private boolean isStatic;
 
-    private SkriptClass skriptClass = null;
-    private Expression<ClassInstance> instanceExpr;
-
     private Kleenean shouldBeSingle;
     private Class<?>[] possibleTypes;
     private Class<?> bestReturnType;
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean init(Expression<?>[] exprs, int pattern, Kleenean isDelayed, ParseResult result) {
         isStatic = pattern == 1;
         SkriptClass contextClass = SkriptMethod.getContextClass(getParser());
 
-        String className = getLowerCase(result.regexes.getFirst().group(1));
-        String name = getConfigLowerCase(result.regexes.getFirst().group(2));
-        String args = result.regexes.size() == 1
-            ? "" : result.regexes.get(1).group().trim();
+        String methodName = getConfigLowerCase(result.regexes.get(pattern));
+        String args = result.regexes.size() > pattern + 1
+            ? result.regexes.get(pattern + 1).group() : null;
 
-        MethodReference reference = MethodParser.parseReference(name, args);
+        MethodReference reference = MethodParser.parseReference(methodName, args, isStatic);
         if (reference == null) return false;
 
-        instanceExpr = isStatic ? null : (Expression<ClassInstance>) exprs[0];
         validator = new MethodValidator(getErrorSource(), contextClass, reference, true);
-        if (className != null) {
-            if (className.isEmpty()) return postInit();
-
-            skriptClass = ClassManager.getClass(className);
+        if (isStatic) {
+            String className = getLowerCase(result.regexes.getFirst());
+            SkriptClass skriptClass = ClassManager.getClass(className);
             if (skriptClass == null) {
                 Skript.error("Class '%s' does not exist", titleCase(className));
                 return false;
             }
-        }
-        if (isStatic) {
             return validator.validateStatic(skriptClass) && postInit();
         }
-        if (instanceExpr.getSource() instanceof ExprSelf) {
-            skriptClass = contextClass;
-        }
-        return !validator.validateUnknown(skriptClass).isFalse() && postInit();
+        return validator.validateExpression(exprs[0]) && postInit();
     }
 
     private boolean postInit() {
         shouldBeSingle = validator.shouldBeSingle();
         possibleTypes = validator.possibleTypes();
-        bestReturnType = AccessValidator.bestReturnType(possibleTypes);
+        bestReturnType = Validator.bestReturnType(possibleTypes);
         return true;
     }
 
     @Override
     protected Object @Nullable [] get(Event event) {
-        ClassInstance instance = isStatic ? null : validator.getValidInstance(event, instanceExpr, skriptClass);
+        ClassInstance instance = isStatic ? null : validator.getValidInstance(event);
         if (!isStatic && instance == null) return null;
 
-        ValidReference reference = validator.product();
-        Object[] result = reference.method().run(event, instance, reference.args());
+        Object[] result = validator.product().run(event, instance);
         if (result == null) return null;
 
         result = validator.getSafeConverted(result, shouldBeSingle.isTrue());
