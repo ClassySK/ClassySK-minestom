@@ -39,7 +39,7 @@ public class ReflectUtils {
 
         try {
             var localizedLanguageMap = (Map<String, String>) localizedLanguage.get(null);
-            localizedLanguageMap.put("types."+name+"classinstance", StringUtils.titleCase(name) + " instance");
+            localizedLanguageMap.put(key, StringUtils.titleCase(name) + " instance");
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
