@@ -61,7 +61,7 @@ public class MethodRegistry {
     }
 
     public boolean registerMethod(SkriptMethod method) {
-        return registry.computeIfAbsent(method.name, (k) -> new HashMap<>())
+        return registry.computeIfAbsent(method.name, k -> new HashMap<>())
             .putIfAbsent(method.identifier, method) == null;
     }
 

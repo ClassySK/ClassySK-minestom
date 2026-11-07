@@ -3,7 +3,6 @@ package com.novystxr.classysk.main.elements.classes;
 import ch.njol.skript.doc.*;
 import ch.njol.skript.lang.EventRestrictedSyntax;
 import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;

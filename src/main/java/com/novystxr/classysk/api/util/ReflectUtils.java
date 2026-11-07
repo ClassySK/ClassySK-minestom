@@ -92,7 +92,7 @@ public class ReflectUtils {
         }
     }
 
-    @SuppressWarnings("unchecked, removal")
+    @SuppressWarnings("unchecked")
     public static Map<Pair<Class<?>, Class<?>>, ConverterInfo<?, ?>> getQuickAccessConverters() {
         try {
             return (Map<Pair<Class<?>, Class<?>>, ConverterInfo<?, ?>>) quickAccessConverters.get(null);
@@ -127,7 +127,7 @@ public class ReflectUtils {
         }
     }
 
-    @SuppressWarnings("removal, SuspiciousMethodCalls")
+    @SuppressWarnings("SuspiciousMethodCalls")
     public static void removeFromQuickAccess(Class<?> fromType, Class<?> toType) {
         getQuickAccessConverters().remove(new Pair<>(fromType, toType));
     }

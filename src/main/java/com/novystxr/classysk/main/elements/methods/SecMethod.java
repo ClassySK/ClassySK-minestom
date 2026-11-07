@@ -78,7 +78,7 @@ public class SecMethod extends EffectSection implements ReturnHandler<Object> {
 
     public SkriptClass contextClass;
 
-    private Node node;
+    public Node node;
 
     @Override
     public boolean init(Expression<?>[] exprs, int pattern, Kleenean isDelayed, ParseResult result, SectionNode sectionNode, List<TriggerItem> triggerItems) {

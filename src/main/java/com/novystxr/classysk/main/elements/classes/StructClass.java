@@ -207,7 +207,7 @@ public class StructClass extends Structure {
         }
         List<SkriptMethod> abstractMethods = target.methodRegistry.getAbstract();
         for (SecMethod methodSyntax : methodSyntaxes) {
-            SkriptLogger.setNode(methodSyntax.getNode());
+            SkriptLogger.setNode(methodSyntax.node);
 
             SkriptMethod method = methodSyntax.result;
             SkriptMethod overridden = target.getExactMethod(method.identifier);
