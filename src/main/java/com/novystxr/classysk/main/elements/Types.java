@@ -8,19 +8,24 @@ import ch.njol.skript.lang.ParseContext;
 import ch.njol.skript.registrations.Classes;
 import ch.njol.yggdrasil.Fields;
 import ch.njol.yggdrasil.Fields.FieldContext;
+import com.novystxr.classysk.api.assignability.AssignabilityBridge;
+import com.novystxr.classysk.api.assignability.TypedInstanceWrapper;
 import com.novystxr.classysk.api.classes.*;
 import com.novystxr.classysk.api.fields.SerializableField;
 import com.novystxr.classysk.api.util.StringUtils;
 import org.skriptlang.skript.addon.SkriptAddon;
+import org.skriptlang.skript.lang.comparator.Comparators;
+import org.skriptlang.skript.lang.comparator.Relation;
+
 import java.io.StreamCorruptedException;
 
 public class Types {
     @SuppressWarnings("unchecked")
-    public static <T extends ClassInstance, E extends T> Parser<E> getParser() {
-        return (Parser<E>) classParser;
+    public static <A, B extends A> Parser<B> getParser(Parser<A> parser) {
+        return (Parser<B>) parser;
     }
 
-    public static Parser<? extends ClassInstance> classParser = new Parser<>() {
+    public static Parser<ClassInstance> classParser = new Parser<>() {
 
         @Override
         public boolean canParse(ParseContext context) {
@@ -35,6 +40,18 @@ public class Types {
         @Override
         public String toVariableNameString(ClassInstance o) {
             return StringUtils.titleCase(o.name) + " instance" + " (" + o.hashCode() + ")";
+        }
+    };
+
+    public static Parser<AssignabilityBridge> unwrapParser = new Parser<>() {
+        @Override
+        public String toString(AssignabilityBridge o, int i) {
+            return classParser.toString(o.unwrap(), i);
+        }
+
+        @Override
+        public String toVariableNameString(AssignabilityBridge o) {
+            return getParser(classParser).toVariableNameString(o.unwrap());
         }
     };
 
@@ -65,7 +82,7 @@ public class Types {
         );
 
         Classes.registerClass(new ClassInfo<>(ClassInstance.class, "classinstance")
-            .since("1.0.0")
+            .since("1.0.0, 1.2.0 (Concrete Types)")
             .user("instances?")
             .usage("[%-class%] instance[s]")
             .examples(
@@ -101,7 +118,7 @@ public class Types {
                     String name = fields.getAndRemoveObject("name", String.class);
                     name = StringUtils.getLowerCase(name);
 
-                    ClassInstance instance = ClassManager.getNewInstance(name);
+                    ClassInstance instance = ClassInstance.newInstance(name);
                     for (FieldContext context : fields) {
                         if (!context.getID().startsWith("field:")) continue;
 
@@ -125,6 +142,12 @@ public class Types {
                 }
             })
         );
+        Comparators.registerComparator(TypedInstanceWrapper.class, ClassInstance.class,
+            (wrapped, unwrapped) -> Relation.get(wrapped.unwrap() == unwrapped));
 
+        Classes.registerClass(new ClassInfo<>(AssignabilityBridge.class, "typedinstance")
+            .serializeAs(ClassInstance.class)
+            .parser(unwrapParser)
+        );
     }
 }

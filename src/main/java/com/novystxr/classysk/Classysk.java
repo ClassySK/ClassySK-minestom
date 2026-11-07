@@ -4,7 +4,10 @@ import ch.njol.skript.Skript;
 import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.registrations.Classes;
 import ch.njol.skript.variables.Variables;
+import com.novystxr.classysk.api.assignability.AdviceBridge;
+import com.novystxr.classysk.api.assignability.AssignabilityBridge;
 import com.novystxr.classysk.api.classes.*;
+import com.novystxr.classysk.api.assignability.ClassInfoAdvice;
 import com.novystxr.classysk.api.fields.SerializableField;
 import com.novystxr.classysk.api.util.Logger;
 import com.novystxr.classysk.api.util.ReflectUtils;
@@ -47,22 +50,22 @@ public class Classysk extends JavaPlugin {
             ClassInjector.UsingInstrumentation.of(Files.createTempDirectory("tmp").toFile(), Target.BOOTSTRAP, ByteBuddyAgent.install())
                 .inject(Collections.singletonMap(new TypeDescription.ForLoadedType(AdviceBridge.class),
                     ClassFileLocator.ForClassLoader.read(AdviceBridge.class)));
-            Class<?> bridge = Class.forName("com.novystxr.classysk.api.classes.AdviceBridge", true, null);
+            Class<?> bridge = Class.forName("com.novystxr.classysk.api.assignability.AdviceBridge", true, null);
 
             bridge.getDeclaredField("pattern").set(null, Pattern.compile("("+ CLASSNAME_PATTERN +") (?i)instances?"));
             bridge.getDeclaredField("processClassInfoResult").set(null, (Function<String, Object>) matched -> {
                 String name = StringUtils.getLowerCase(matched);
-                Class<? extends ClassInstance> subclass = ClassManager.getSubclass(name);
+                Class<? extends AssignabilityBridge> subclass = AssignabilityBridge.getSubInterface(name);
 
                 ReflectUtils.createLanguageNode(name);
                 return new ClassInfo<>(subclass, name+"classinstance")
                     .serializeAs(ClassInstance.class)
-                    .parser(Types.getParser());
+                    .parser(Types.getParser(Types.unwrapParser));
             });
 
             new ByteBuddy()
                 .redefine(Classes.class)
-                .visit(Advice.to(TypedClassAdvice.class).on(ElementMatchers.named("getClassInfoFromUserInput")))
+                .visit(Advice.to(ClassInfoAdvice.class).on(ElementMatchers.named("getClassInfoFromUserInput")))
                 .make()
                 .load(Classes.class.getClassLoader(), ClassReloadingStrategy.fromInstalledAgent());
 

@@ -1,4 +1,4 @@
-package com.novystxr.classysk.api.classes;
+package com.novystxr.classysk.api.assignability;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;

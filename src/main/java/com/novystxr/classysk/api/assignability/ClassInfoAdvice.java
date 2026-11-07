@@ -1,11 +1,11 @@
-package com.novystxr.classysk.api.classes;
+package com.novystxr.classysk.api.assignability;
 
 import ch.njol.skript.classes.ClassInfo;
 import net.bytebuddy.asm.Advice;
 
 import java.util.regex.Matcher;
 
-public class TypedClassAdvice {
+public class ClassInfoAdvice {
     @Advice.OnMethodExit
     static void onExit(@Advice.Argument(0) String input, @Advice.Return(readOnly = false) ClassInfo<?> result) {
         if (result != null) return;

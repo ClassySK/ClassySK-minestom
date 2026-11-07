@@ -4,6 +4,7 @@ import ch.njol.skript.doc.*;
 import ch.njol.skript.lang.EventRestrictedSyntax;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser;
+import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
@@ -45,7 +46,7 @@ public class ExprSelf extends SimpleExpression<Object> implements EventRestricte
     private SkriptClass skriptClass;
 
     @Override
-    public boolean init(Expression<?>[] expressions, int matchedPattern, Kleenean isDelayed, SkriptParser.ParseResult parseResult) {
+    public boolean init(Expression<?> @Nullable [] expressions, int matchedPattern, @Nullable Kleenean isDelayed, @Nullable ParseResult parseResult) {
         this.skriptClass = SkriptMethod.getContextClass(getParser());
         return skriptClass != null;
     }
@@ -53,8 +54,7 @@ public class ExprSelf extends SimpleExpression<Object> implements EventRestricte
     @Override
     protected ClassInstance @Nullable [] get(Event event) {
         if (event instanceof MethodEvent methodEvent) {
-            return methodEvent.instance == null
-                ? null : CollectionUtils.array(methodEvent.instance);
+            return methodEvent.instance == null ? null : CollectionUtils.array(methodEvent.instance);
         }
         return null;
     }
