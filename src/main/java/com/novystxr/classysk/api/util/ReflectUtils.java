@@ -78,6 +78,9 @@ public class ReflectUtils {
             var exactClassInfosMap = (Map<Class<?>, ClassInfo<?>>) exactClassInfos.get(null);
             exactClassInfosMap.put(clazz, info);
 
+            var superClassInfosMap = (Map<Class<?>, ClassInfo<?>>) superClassInfos.get(null);
+            superClassInfosMap.put(clazz, info);
+
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
