@@ -297,4 +297,9 @@ public abstract class Validator<T extends AccessModifiable> implements RuntimeEr
     public @NotNull ErrorSource getErrorSource() {
         return errorSource;
     }
+
+    @Override
+    public void error(String message) {
+        Skript.error(message);
+    }
 }
