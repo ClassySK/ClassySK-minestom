@@ -44,6 +44,12 @@ public class Types {
     };
 
     public static Parser<AssignabilityBridge> unwrapParser = new Parser<>() {
+
+        @Override
+        public boolean canParse(ParseContext context) {
+            return false;
+        }
+
         @Override
         public String toString(AssignabilityBridge o, int i) {
             return classParser.toString(o.unwrap(), i);
