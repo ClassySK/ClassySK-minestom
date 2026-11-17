@@ -7,7 +7,6 @@ import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.registrations.Classes;
 import ch.njol.skript.util.ClassInfoReference;
-import org.apache.commons.lang3.ArrayUtils;
 import org.skriptlang.skript.lang.arithmetic.Arithmetics;
 import org.skriptlang.skript.lang.arithmetic.Operator;
 import org.skriptlang.skript.lang.comparator.Comparators;

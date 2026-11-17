@@ -12,7 +12,6 @@ import org.skriptlang.skript.lang.converter.Converters;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public interface FieldHolder {
 
